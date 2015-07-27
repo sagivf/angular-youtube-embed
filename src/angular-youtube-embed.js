@@ -102,7 +102,7 @@ angular.module('youtube-embed', ['ng'])
 
     return Service;
 }])
-.directive('youtubeVideo', ['youtubeEmbedUtils', function (youtubeEmbedUtils) {
+.directive('youtubeVideo', ['youtubeEmbedUtils', '$parse', '$compile', function (youtubeEmbedUtils, $parse, $compile) {
     var uniqId = 1;
 
     // from YT.PlayerState
@@ -127,113 +127,127 @@ angular.module('youtube-embed', ['ng'])
             playerHeight: '=?',
             playerWidth: '=?'
         },
-        link: function (scope, element, attrs) {
-            // allows us to $watch `ready`
-            scope.utils = youtubeEmbedUtils;
+        link: function(scope, element, attrs) {
+          var startWithImage = $parse(attrs.startWithImage)();
+          if (startWithImage === true) {
+              var iframeWrapper= $compile(angular.element('<div ng-show="hideOverlay"></div>'))(scope);
+              var imageWrapper = $compile(angular.element(
+                '<div class="image-wrapper" ng-click="hideOverlay = true; player.playVideo()" ng-show="!hideOverlay">' +
+                  '<img ng-src="http://img.youtube.com/vi/sMKoNBRZM1M/0.jpg" ng-style="{ \'height\': playerHeight + \'px\' }">' +
+                  '<div></div>' +
+                '</div>'))(scope);
 
-            // player-id attr > id attr > directive-generated ID
-            var playerId = attrs.playerId || element[0].id || 'unique-youtube-embed-id-' + uniqId++;
-            element[0].id = playerId;
+              element.wrap(iframeWrapper);
+              iframeWrapper.after(imageWrapper);
+          }
 
-            // Attach to element
-            scope.playerHeight = scope.playerHeight || 390;
-            scope.playerWidth = scope.playerWidth || 640;
-            scope.playerVars = scope.playerVars || {};
+          // Attach to element
+          scope.playerHeight = scope.playerHeight || 390;
+          scope.playerWidth = scope.playerWidth || 640;
+          scope.playerVars = scope.playerVars || {};
 
-            // YT calls callbacks outside of digest cycle
-            function applyBroadcast () {
-                var args = Array.prototype.slice.call(arguments);
-                scope.$apply(function () {
-                    scope.$emit.apply(scope, args);
-                });
-            }
 
-            function onPlayerStateChange (event) {
-                var state = stateNames[event.data];
-                if (typeof state !== 'undefined') {
-                    applyBroadcast(eventPrefix + state, scope.player, event);
-                }
-                scope.$apply(function () {
-                    scope.player.currentState = state;
-                });
-            }
+        // allows us to $watch `ready`
+          scope.utils = youtubeEmbedUtils;
 
-            function onPlayerReady (event) {
-                applyBroadcast(eventPrefix + 'ready', scope.player, event);
-            }
+          // player-id attr > id attr > directive-generated ID
+          var playerId = attrs.playerId || element[0].id || 'unique-youtube-embed-id-' + uniqId++;
+          element[0].id = playerId;
 
-            function onPlayerError (event) {
-                applyBroadcast(eventPrefix + 'error', scope.player, event);
-            }
+          // YT calls callbacks outside of digest cycle
+          function applyBroadcast() {
+              var args = Array.prototype.slice.call(arguments);
+              scope.$apply(function () {
+                  scope.$emit.apply(scope, args);
+              });
+          }
 
-            function createPlayer () {
-                var playerVars = angular.copy(scope.playerVars);
-                playerVars.start = playerVars.start || scope.urlStartTime;
-                var player = new YT.Player(playerId, {
-                    height: scope.playerHeight,
-                    width: scope.playerWidth,
-                    videoId: scope.videoId,
-                    playerVars: playerVars,
-                    events: {
-                        onReady: onPlayerReady,
-                        onStateChange: onPlayerStateChange,
-                        onError: onPlayerError
-                    }
-                });
+          function onPlayerStateChange(event) {
+              var state = stateNames[event.data];
+              if (typeof state !== 'undefined') {
+                  applyBroadcast(eventPrefix + state, scope.player, event);
+              }
+              scope.$apply(function () {
+                  scope.player.currentState = state;
+              });
+          }
 
-                player.id = playerId;
-                return player;
-            }
+          function onPlayerReady(event) {
+              applyBroadcast(eventPrefix + 'ready', scope.player, event);
+          }
 
-            function loadPlayer () {
-                if (scope.videoId || scope.playerVars.list) {
-                    if (scope.player && typeof scope.player.destroy === 'function') {
-                        scope.player.destroy();
-                    }
+          function onPlayerError(event) {
+              applyBroadcast(eventPrefix + 'error', scope.player, event);
+          }
 
-                    scope.player = createPlayer();
-                }
-            };
+          function createPlayer() {
+              var playerVars = angular.copy(scope.playerVars);
+              playerVars.start = playerVars.start || scope.urlStartTime;
+              var player = new YT.Player(playerId, {
+                  height: scope.playerHeight,
+                  width: scope.playerWidth,
+                  videoId: scope.videoId,
+                  playerVars: playerVars,
+                  events: {
+                      onReady: onPlayerReady,
+                      onStateChange: onPlayerStateChange,
+                      onError: onPlayerError
+                  }
+              });
 
-            var stopWatchingReady = scope.$watch(
-                function () {
-                    return scope.utils.ready
-                        // Wait until one of them is defined...
-                        && (typeof scope.videoUrl !== 'undefined'
-                        ||  typeof scope.videoId !== 'undefined'
-                        ||  typeof scope.playerVars.list !== 'undefined');
-                },
-                function (ready) {
-                    if (ready) {
-                        stopWatchingReady();
+              player.id = playerId;
+              return player;
+          }
 
-                        // URL takes first priority
-                        if (typeof scope.videoUrl !== 'undefined') {
-                            scope.$watch('videoUrl', function (url) {
-                                scope.videoId = scope.utils.getIdFromURL(url);
-                                scope.urlStartTime = scope.utils.getTimeFromURL(url);
+          function loadPlayer() {
+              if (scope.videoId || scope.playerVars.list) {
+                  if (scope.player && typeof scope.player.destroy === 'function') {
+                      scope.player.destroy();
+                  }
 
-                                loadPlayer();
-                            });
+                  scope.player = createPlayer();
+              }
+          };
+
+          var stopWatchingReady = scope.$watch(
+            function () {
+                return scope.utils.ready
+                      // Wait until one of them is defined...
+                  && (typeof scope.videoUrl !== 'undefined'
+                  || typeof scope.videoId !== 'undefined'
+                  || typeof scope.playerVars.list !== 'undefined');
+            },
+            function (ready) {
+                if (ready) {
+                    stopWatchingReady();
+
+                    // URL takes first priority
+                    if (typeof scope.videoUrl !== 'undefined') {
+                        scope.$watch('videoUrl', function (url) {
+                            scope.videoId = scope.utils.getIdFromURL(url);
+                            scope.urlStartTime = scope.utils.getTimeFromURL(url);
+
+                            loadPlayer();
+                        });
 
                         // then, a video ID
-                        } else if (typeof scope.videoId !== 'undefined') {
-                            scope.$watch('videoId', function () {
-                                scope.urlStartTime = null;
-                                loadPlayer();
-                            });
+                    } else if (typeof scope.videoId !== 'undefined') {
+                        scope.$watch('videoId', function () {
+                            scope.urlStartTime = null;
+                            loadPlayer();
+                        });
 
                         // finally, a list
-                        } else {
-                            scope.$watch('playerVars.list', function () {
-                                scope.urlStartTime = null;
-                                loadPlayer();
-                            });
-                        }
+                    } else {
+                        scope.$watch('playerVars.list', function () {
+                            scope.urlStartTime = null;
+                            loadPlayer();
+                        });
                     }
+                }
             });
 
-            scope.$watchCollection(['playerHeight', 'playerWidth'], function() {
+            scope.$watchCollection(['playerHeight', 'playerWidth'], function () {
                 if (scope.player) {
                     scope.player.setSize(scope.playerWidth, scope.playerHeight);
                 }
