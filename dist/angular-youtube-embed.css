@@ -1,0 +1,3 @@
+.image-wrapper { position:  relative; }
+.image-wrapper > img { width: 100%; }
+.image-wrapper > div { height: 100%; top: 0; width: 100%; position: absolute; background-image: url(you-tube.png); background-size: 25% 25%;background-repeat: no-repeat; background-position: center center; z-index: 0; }

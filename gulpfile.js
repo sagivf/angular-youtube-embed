@@ -45,6 +45,9 @@ gulp.task('dist', function () {
         }))
         .pipe(header(banner, {package: package}))
         .pipe(gulp.dest(build));
+
+    gulp.src('src/angular-youtube-embed.css')
+      .pipe(gulp.dest(build));
 });
 
 gulp.task('host', function () {
