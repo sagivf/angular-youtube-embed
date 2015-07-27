@@ -133,7 +133,7 @@ angular.module('youtube-embed', ['ng'])
               var iframeWrapper= $compile(angular.element('<div ng-show="hideOverlay"></div>'))(scope);
               var imageWrapper = $compile(angular.element(
                 '<div class="image-wrapper" ng-click="hideOverlay = true; player.playVideo()" ng-show="!hideOverlay">' +
-                  '<img ng-src="http://img.youtube.com/vi/sMKoNBRZM1M/0.jpg" ng-style="{ \'height\': playerHeight + \'px\' }">' +
+                  '<img ng-src="http://img.youtube.com/vi/{{videoId}}/0.jpg" ng-style="{ \'height\': playerHeight + \'px\' }">' +
                   '<div></div>' +
                 '</div>'))(scope);
 
