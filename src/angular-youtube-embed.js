@@ -102,7 +102,7 @@ angular.module('youtube-embed', ['ng'])
 
     return Service;
 }])
-.directive('youtubeVideo', ['youtubeEmbedUtils', '$parse', '$compile', function (youtubeEmbedUtils, $parse, $compile) {
+.directive('youtubeVideo', ['youtubeEmbedUtils', '$parse', '$compile', '$q', function (youtubeEmbedUtils, $parse, $compile, $q) {
     var uniqId = 1;
 
     // from YT.PlayerState
@@ -128,11 +128,12 @@ angular.module('youtube-embed', ['ng'])
             playerWidth: '=?'
         },
         link: function(scope, element, attrs) {
+          var playerReady = $q.defer();
           var startWithImage = $parse(attrs.startWithImage)();
           if (startWithImage === true) {
               var iframeWrapper= $compile(angular.element('<div ng-show="hideOverlay"></div>'))(scope);
               var imageWrapper = $compile(angular.element(
-                '<div class="image-wrapper" ng-click="hideOverlay = true; player.playVideo()" ng-show="!hideOverlay">' +
+                '<div class="image-wrapper" ng-click="imageClicked()" ng-show="!hideOverlay">' +
                   '<img ng-src="http://img.youtube.com/vi/{{videoId}}/0.jpg" ng-style="{ \'height\': playerHeight + \'px\' }">' +
                   '<div></div>' +
                 '</div>'))(scope);
@@ -154,6 +155,13 @@ angular.module('youtube-embed', ['ng'])
           var playerId = attrs.playerId || element[0].id || 'unique-youtube-embed-id-' + uniqId++;
           element[0].id = playerId;
 
+          scope.imageClicked = function(){
+            scope.hideOverlay = true;
+            playerReady.promise.then(function(){
+              scope.player.playVideo();
+            });
+          }
+
           // YT calls callbacks outside of digest cycle
           function applyBroadcast() {
               var args = Array.prototype.slice.call(arguments);
@@ -174,6 +182,7 @@ angular.module('youtube-embed', ['ng'])
 
           function onPlayerReady(event) {
               applyBroadcast(eventPrefix + 'ready', scope.player, event);
+              playerReady.resolve();
           }
 
           function onPlayerError(event) {
