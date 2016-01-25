@@ -3,7 +3,7 @@
 > Embed a YouTube player with a simple directive.
 
 ```shell
-$ bower install --save angular-youtube-mb
+$ npm install --save angular-youtube-embed
 ```
 
 ## Can I use it?
@@ -46,6 +46,20 @@ $scope.anotherGoodOne = 'https://www.youtube.com/watch?v=18-xvIjH8T4';
 
 ```html
 <youtube-video video-url="anotherGoodOne"></youtube-video>
+```
+
+## What about browserify?
+
+If you are using browserify or webpack, make sure you've installed this module:
+
+```shell
+$ npm install --save angular-youtube-embed
+```
+
+and use it in your code like this:
+
+```javascript
+require('angular-youtube-mb');
 ```
 
 ## Is that it?
@@ -183,6 +197,7 @@ Check out [the demo](http://brandly.github.io/angular-youtube-embed) and [the co
 First, make sure you have the necessary dependencies installed locally and [gulp](http://gulpjs.com/) installed globally
 ```shell
 $ npm install
+$ bower install
 $ npm install --global gulp
 ```
 

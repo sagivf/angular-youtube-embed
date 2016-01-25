@@ -1,18 +1,20 @@
 {
-  "name": "angular-youtube-mb",
-  "version": "1.0.2",
-  "private": true,
+  "name": "angular-youtube-embed",
+  "version": "1.1.1",
   "author": "Matthew Brandly",
   "license": "MIT",
+  "main": "index.js",
   "repository": {
     "type": "git",
     "url": "git://github.com/brandly/angular-youtube-embed.git"
   },
   "homepage": "http://brandly.github.io/angular-youtube-embed/",
   "scripts": {
-    "postinstall": "bower install",
     "start": "gulp",
     "test": "gulp test"
+  },
+  "dependencies": {
+    "angular": ""
   },
   "devDependencies": {
     "coffee-script": "^1.7.1",
