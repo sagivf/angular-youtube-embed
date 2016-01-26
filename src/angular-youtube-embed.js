@@ -102,7 +102,7 @@ angular.module('youtube-embed', ['ng'])
 
     return Service;
 }])
-.directive('youtubeVideo', ['youtubeEmbedUtils', function (youtubeEmbedUtils) {
+.directive('youtubeVideo', ['youtubeEmbedUtils', '$compile', '$parse', '$q', function (youtubeEmbedUtils, $compile, $parse, $q) {
     var uniqId = 1;
 
     // from YT.PlayerState
@@ -128,6 +128,30 @@ angular.module('youtube-embed', ['ng'])
             playerWidth: '=?'
         },
         link: function (scope, element, attrs) {
+            var playerReady = $q.defer();
+            var thumbnail = $parse(attrs.thumbnail)();
+            if (thumbnail || thumbnail === 0) {
+                if (typeof thumbnail !== 'number') {
+                    thumbnail = 0;
+                }
+                var iframeWrapper= $compile(angular.element('<div ng-show="hideOverlay"></div>'))(scope);
+                var imageWrapper = $compile(angular.element(
+                    '<div class="embed-image-wrapper" ng-click="imageClicked()" ng-show="!hideOverlay">' +
+                    '<img class="' + attrs.class  + '" ng-src="http://img.youtube.com/vi/{{videoId}}/{{' + thumbnail + '}}.jpg" height="{{playerHeight}}px" width="{{playerWidth}}px">' +
+                    '</div>'))(scope);
+
+                element.wrap(iframeWrapper);
+                iframeWrapper.after(imageWrapper);
+            }
+
+
+            scope.imageClicked = function(){
+                playerReady.promise.then(function(){
+                    scope.player.playVideo();
+                    scope.hideOverlay = true;
+                });
+            };
+
             // allows us to $watch `ready`
             scope.utils = youtubeEmbedUtils;
 
@@ -160,6 +184,7 @@ angular.module('youtube-embed', ['ng'])
 
             function onPlayerReady (event) {
                 applyBroadcast(eventPrefix + 'ready', scope.player, event);
+                playerReady.resolve();
             }
 
             function onPlayerError (event) {
