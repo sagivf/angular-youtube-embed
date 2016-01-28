@@ -134,6 +134,7 @@ angular.module('youtube-embed', ['ng'])
                 var playerId = attrs.playerId || element[0].id || 'unique-youtube-embed-id-' + uniqId++;
 
                 var playerReady = $q.defer();
+                var loadReady = $q.defer();
                 var thumbnail = $parse(attrs.thumbnail)();
                 if (thumbnail || thumbnail === 0) {
                     if (typeof thumbnail !== 'number') {
@@ -161,6 +162,10 @@ angular.module('youtube-embed', ['ng'])
                     playerReady.promise.then(function(){
                         scope.player.playVideo();
                         scope.showThumbnail = false;
+                    });
+
+                    loadReady.promise.then(function(){
+                        loadPlayer();
                     });
                 };
 
@@ -245,21 +250,21 @@ angular.module('youtube-embed', ['ng'])
                                     scope.videoId = scope.utils.getIdFromURL(url);
                                     scope.urlStartTime = scope.utils.getTimeFromURL(url);
 
-                                    loadPlayer();
+                                    loadReady.resolve();
                                 });
 
                                 // then, a video ID
                             } else if (typeof scope.videoId !== 'undefined') {
                                 scope.$watch('videoId', function () {
                                     scope.urlStartTime = null;
-                                    loadPlayer();
+                                    loadReady.resolve();
                                 });
 
                                 // finally, a list
                             } else {
                                 scope.$watch('playerVars.list', function () {
                                     scope.urlStartTime = null;
-                                    loadPlayer();
+                                    loadReady.resolve();
                                 });
                             }
                         }
